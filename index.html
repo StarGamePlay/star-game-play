@@ -1,0 +1,480 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STAR GAME PLAY</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: #101610;
+    color: #eee;
+    font-family: Tahoma, Arial, sans-serif;
+}
+
+header {
+    background: #1b281c;
+    padding: 25px 15px;
+    text-align: center;
+    border-bottom: 2px solid #83bd45;
+}
+
+header h1 {
+    color: #a5d65a;
+    margin: 0 0 15px;
+}
+
+nav a {
+    color: #c4e69b;
+    text-decoration: none;
+    margin: 0 10px;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+    padding: 20px;
+}
+
+.hero {
+    text-align: center;
+    padding: 45px 10px;
+}
+
+.hero h2 {
+    color: #a5d65a;
+    font-size: 30px;
+}
+
+.section-title {
+    color: #a5d65a;
+    border-right: 4px solid #83bd45;
+    padding-right: 12px;
+}
+
+.products {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 18px;
+}
+
+.product, .admin {
+    background: #1b281c;
+    border: 1px solid #344b32;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.product h3 {
+    color: #c5e99a;
+}
+
+.price {
+    color: #a5d65a;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.description {
+    color: #ccc;
+    line-height: 1.9;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 13px;
+    margin: 8px 0 15px;
+    background: #101610;
+    color: white;
+    border: 1px solid #526d42;
+    border-radius: 7px;
+    font-family: Tahoma;
+}
+
+textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+label {
+    color: #c5e99a;
+}
+
+button {
+    background: #83bd45;
+    color: #101610;
+    border: none;
+    padding: 11px 17px;
+    margin: 5px 3px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:hover {
+    background: #a5d65a;
+}
+
+.delete {
+    background: #a83d3d;
+    color: white;
+}
+
+.delete:hover {
+    background: #d34d4d;
+}
+
+.secondary {
+    background: #465640;
+    color: white;
+}
+
+.admin {
+    margin-top: 50px;
+}
+
+.admin h2 {
+    color: #a5d65a;
+}
+
+.product-actions {
+    margin-top: 15px;
+}
+
+footer {
+    background: #1b281c;
+    text-align: center;
+    padding: 25px;
+    margin-top: 50px;
+    color: #aaa;
+}
+
+.status {
+    color: #a5d65a;
+    min-height: 25px;
+}
+
+.empty {
+    color: #aaa;
+    padding: 20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>λ STAR GAME PLAY</h1>
+    <nav>
+        <a href="#home">خانه</a>
+        <a href="#shop">فروشگاه</a>
+        <a href="#admin">مدیریت</a>
+    </nav>
+</header>
+
+<main class="container">
+
+<section class="hero" id="home">
+    <h2>دنیای بازی‌ها</h2>
+    <p>فروشگاه اختصاصی محصولات گیمینگ STAR GAME PLAY</p>
+    <a href="#shop">
+        <button>مشاهده محصولات</button>
+    </a>
+</section>
+
+<section id="shop">
+    <h2 class="section-title">فروشگاه محصولات</h2>
+    <div class="products" id="products">
+        <p class="empty">در حال بارگذاری محصولات...</p>
+    </div>
+</section>
+
+<section class="admin" id="admin">
+    <h2>مدیریت فروشگاه</h2>
+    <p>افزودن یا ویرایش محصولات</p>
+
+    <form id="productForm">
+
+        <label>نام محصول</label>
+        <input id="name" type="text"
+        placeholder="مثلاً راهنمای بازی" required>
+
+        <label>قیمت به تومان</label>
+        <input id="price" type="number"
+        min="0" placeholder="مثلاً 5000" required>
+
+        <label>توضیحات محصول</label>
+        <textarea id="description"
+        placeholder="توضیحات محصول را بنویس..."></textarea>
+
+        <label>فایل PDF محصول</label>
+        <input id="file" type="file"
+        accept=".pdf,application/pdf">
+
+        <p class="status" id="status"></p>
+
+        <button type="submit" id="saveButton">
+            افزودن محصول
+        </button>
+
+        <button type="button" class="secondary"
+        id="cancelButton" hidden>
+            لغو ویرایش
+        </button>
+
+    </form>
+</section>
+
+</main>
+
+<footer>
+    <p>λ STAR GAME PLAY</p>
+    <p>فروشگاه محصولات دیجیتال گیمینگ</p>
+</footer>
+
+<script>
+const DB_NAME = "STAR_GAME_PLAY_DB";
+const STORE_NAME = "products";
+
+let db;
+let editingId = null;
+
+const productsArea = document.getElementById("products");
+const form = document.getElementById("productForm");
+const statusText = document.getElementById("status");
+
+function openDatabase() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 1);
+
+        request.onupgradeneeded = function() {
+            const database = request.result;
+
+            if (!database.objectStoreNames.contains(STORE_NAME)) {
+                database.createObjectStore(STORE_NAME, {
+                    keyPath: "id",
+                    autoIncrement: true
+                });
+            }
+        };
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function getStore(mode) {
+    return db.transaction(STORE_NAME, mode)
+        .objectStore(STORE_NAME);
+}
+
+function getAllProducts() {
+    return new Promise((resolve, reject) => {
+        const request = getStore("readonly").getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function saveProduct(product) {
+    return new Promise((resolve, reject) => {
+        const store = getStore("readwrite");
+        const request = product.id
+            ? store.put(product)
+            : store.add(product);
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function deleteProduct(id) {
+    return new Promise((resolve, reject) => {
+        const request = getStore("readwrite").delete(id);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function createElement(tag, className, content) {
+    const element = document.createElement(tag);
+
+    if (className) element.className = className;
+    if (content !== undefined) element.textContent = content;
+
+    return element;
+}
+
+async function renderProducts() {
+    const items = await getAllProducts();
+
+    productsArea.replaceChildren();
+
+    if (items.length === 0) {
+        productsArea.append(
+            createElement("p", "empty", "هنوز محصولی اضافه نشده است.")
+        );
+        return;
+    }
+
+    items.forEach(item => {
+        const card = createElement("article", "product");
+
+        card.append(
+            createElement("h3", "", item.name),
+            createElement(
+                "p",
+                "price",
+                Number(item.price).toLocaleString("fa-IR") + " تومان"
+            ),
+            createElement("p", "description", item.description || "بدون توضیحات")
+        );
+
+        const actions = createElement("div", "product-actions");
+
+        if (item.fileBlob) {
+            const downloadButton = createElement("button", "", "دانلود PDF");
+
+            downloadButton.onclick = function() {
+                const url = URL.createObjectURL(item.fileBlob);
+                const link = document.createElement("a");
+
+                link.href = url;
+                link.download = item.fileName || "product.pdf";
+                link.click();
+
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            };
+
+            actions.append(downloadButton);
+        } else {
+            actions.append(
+                createElement("p", "empty", "هنوز فایلی برای این محصول ثبت نشده.")
+            );
+        }
+
+        const editButton = createElement("button", "secondary", "ویرایش");
+        editButton.onclick = () => editProduct(item);
+
+        const deleteButton = createElement("button", "delete", "حذف");
+        deleteButton.onclick = () => removeProduct(item.id);
+
+        actions.append(editButton, deleteButton);
+        card.append(actions);
+        productsArea.append(card);
+    });
+}
+
+async function editProduct(item) {
+    editingId = item.id;
+
+    document.getElementById("name").value = item.name;
+    document.getElementById("price").value = item.price;
+    document.getElementById("description").value = item.description || "";
+
+    document.getElementById("saveButton").textContent = "ذخیره تغییرات";
+    document.getElementById("cancelButton").hidden = false;
+
+    statusText.textContent = "در حال ویرایش محصول: " + item.name;
+
+    document.getElementById("admin").scrollIntoView({
+        behavior: "smooth"
+    });
+}
+
+async function removeProduct(id) {
+    if (!confirm("این محصول حذف شود؟")) return;
+
+    await deleteProduct(id);
+    await renderProducts();
+
+    statusText.textContent = "محصول حذف شد.";
+}
+
+function resetForm() {
+    form.reset();
+    editingId = null;
+
+    document.getElementById("saveButton").textContent = "افزودن محصول";
+    document.getElementById("cancelButton").hidden = true;
+}
+
+document.getElementById("cancelButton").onclick = function() {
+    resetForm();
+    statusText.textContent = "";
+};
+
+form.onsubmit = async function(event) {
+    event.preventDefault();
+
+    const name = document.getElementById("name").value.trim();
+    const price = document.getElementById("price").value;
+    const description = document.getElementById("description").value.trim();
+    const selectedFile = document.getElementById("file").files[0];
+
+    if (!name || !price || Number(price) < 0) {
+        statusText.textContent = "نام و قیمت معتبر وارد کن.";
+        return;
+    }
+
+    if (selectedFile && selectedFile.type !== "application/pdf") {
+        statusText.textContent = "فقط فایل PDF انتخاب کن.";
+        return;
+    }
+
+    try {
+        let oldProduct = null;
+
+        if (editingId !== null) {
+            const items = await getAllProducts();
+            oldProduct = items.find(item => item.id === editingId);
+        }
+
+        const product = {
+            name,
+            price,
+            description,
+            fileName: selectedFile
+                ? selectedFile.name
+                : oldProduct?.fileName || "",
+            fileBlob: selectedFile
+                ? selectedFile
+                : oldProduct?.fileBlob || null
+        };
+
+        if (editingId !== null) {
+            product.id = editingId;
+        }
+
+        await saveProduct(product);
+
+        resetForm();
+        await renderProducts();
+
+        statusText.textContent = "محصول با موفقیت ذخیره شد!";
+    } catch (error) {
+        statusText.textContent =
+            "ذخیره انجام نشد. ممکن است فضای ذخیره‌سازی کافی نباشد.";
+    }
+};
+
+async function startSite() {
+    try {
+        db = await openDatabase();
+        await renderProducts();
+    } catch (error) {
+        productsArea.textContent =
+            "خطا در راه‌اندازی فروشگاه. مرورگر را بررسی کن.";
+    }
+}
+
+startSite();
+</script>
+
+</body>
+</html>
